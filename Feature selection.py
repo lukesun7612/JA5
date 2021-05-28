@@ -31,11 +31,12 @@ def clean_dataset(df):
     return df[indices_to_keep].astype(np.float64)
 
 if __name__ == '__main__':
+    pd.set_option('display.max_columns', None)
     input1 = "./summary_drivers.xlsx"
     input2 = "./summary0.csv"
     output1 = "./Table/Feature_selection1.xlsx"
     output2 = "./Table/Feature_selection2.xlsx"
-    df1 = pd.read_excel(input1, index_col='TELEMATICSID')
+    df1 = pd.read_excel(input1, index_col='TELEMATICSID', engine='openpyxl')
     df2 = pd.read_csv(input2, index_col='ID')
     df1.columns = df1.columns.str.replace('_driver', '')
     # df1 = df1.loc[df1['nearmiss_accel'].apply(lambda x: x > 0)]
@@ -67,14 +68,13 @@ if __name__ == '__main__':
         methodname = [[y1, y1, y1],['REFCV', 'SelectFromModel', 'permutation_importance']]
         result1 = pd.DataFrame(zip(rfe1.ranking_, sfm1.get_support(), map(lambda x: round(x, 3), pi1.importances_mean)), index=name1, columns=methodname)
         result = pd.concat([result, result1], axis=1)
-
     result_ = pd.DataFrame()
     for y2 in ['Harshacceleration', 'Harshdeceleration']:
         Y2 = df2[y2]
 
         poisson2 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X2, Y2, sample_weight=df2["Days"])
 
-        rfe2 = RFECV(poisson1, min_features_to_select=1, cv=KFold(10)).fit(X2, Y2)
+        rfe2 = RFECV(poisson2, min_features_to_select=1, cv=KFold(10)).fit(X2, Y2)
 
         sfm2 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X2, Y2, sample_weight=df2["Days"])
 
@@ -83,5 +83,6 @@ if __name__ == '__main__':
         methodname = [[y2, y2, y2],['REFCV', 'SelectFromModel', 'permutation_importance']]
         result2 = pd.DataFrame(zip(rfe2.ranking_, sfm2.get_support(), map(lambda x: round(x, 3), pi2.importances_mean)), index=name2, columns=methodname)
         result_ = pd.concat([result_, result2], axis=1)
-    result.to_excel(output1)
-    result_.to_excel(output2)
+    print(result_)
+    # result.to_excel(output1)
+    # result_.to_excel(output2)
