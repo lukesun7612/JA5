@@ -38,7 +38,7 @@ if __name__ == '__main__':
     df1 = pd.read_excel(input1, index_col='TELEMATICSID')
     df2 = pd.read_csv(input2, index_col='ID')
     df1.columns = df1.columns.str.replace('_driver', '')
-    df1 = df1.loc[df1['nearmiss_accel'].apply(lambda x: x > 0)]
+    # df1 = df1.loc[df1['nearmiss_accel'].apply(lambda x: x > 0)]
     # df2 = df2.loc[df2['Harshacceleration'].apply(lambda x: x > 0)]
     df2['Fuel'] = df2['Fuel'].fillna(value=df2['Fuel'].mean())
     scaler = StandardScaler()
@@ -67,7 +67,7 @@ if __name__ == '__main__':
         methodname = [[y1, y1, y1],['REFCV', 'SelectFromModel', 'permutation_importance']]
         result1 = pd.DataFrame(zip(rfe1.ranking_, sfm1.get_support(), map(lambda x: round(x, 3), pi1.importances_mean)), index=name1, columns=methodname)
         result = pd.concat([result, result1], axis=1)
-    result.to_excel(output1)
+
     result_ = pd.DataFrame()
     for y2 in ['Harshacceleration', 'Harshdeceleration']:
         Y2 = df2[y2]
@@ -78,9 +78,10 @@ if __name__ == '__main__':
 
         sfm2 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X2, Y2, sample_weight=df2["Days"])
 
-        pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10)
+        pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=0)
 
         methodname = [[y2, y2, y2],['REFCV', 'SelectFromModel', 'permutation_importance']]
         result2 = pd.DataFrame(zip(rfe2.ranking_, sfm2.get_support(), map(lambda x: round(x, 3), pi2.importances_mean)), index=name2, columns=methodname)
         result_ = pd.concat([result_, result2], axis=1)
+    result.to_excel(output1)
     result_.to_excel(output2)
