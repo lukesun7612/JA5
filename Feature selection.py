@@ -13,7 +13,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import RFECV, SelectFromModel
 from sklearn.linear_model import TweedieRegressor, LassoCV, PoissonRegressor
 from sklearn.model_selection import KFold
-from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor
+import statsmodels.api as sm
 from sklearn.inspection import permutation_importance
 
 def pretty_print_linear(coefs, names = None, sort = False):
@@ -57,32 +57,32 @@ if __name__ == '__main__':
     for y1 in ['nearmiss_accel', 'nearmiss_brake']:
         Y1 = df1[y1]
 
-        poisson1 = TweedieRegressor(power=1.4, alpha=1, max_iter=10000).fit(X1, Y1, sample_weight=df1["ndays"])
+        poisson1 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X1, Y1, sample_weight=df1["ndays"]/7)
 
         rfe1 = RFECV(poisson1, min_features_to_select=1, cv=KFold(10)).fit(X1, Y1)
 
-        sfm1 = SelectFromModel(TweedieRegressor(power=1.4, alpha=1, max_iter=10000)).fit(X1, Y1, sample_weight=df1["ndays"])
+        sfm1 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X1, Y1, sample_weight=df1["ndays"]/7)
 
         pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10)
 
-        methodname = [[y1, y1, y1], ['REFCV', 'SelectFromModel', 'permutation_importance']]
+        methodname = [[y1, y1, y1], ['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result1 = pd.DataFrame(zip(rfe1.ranking_, sfm1.get_support(), map(lambda x: round(x, 4), pi1.importances_mean)), index=name1, columns=methodname)
         result = pd.concat([result, result1], axis=1)
     result_ = pd.DataFrame()
     for y2 in ['Harshacceleration', 'Harshdeceleration']:
         Y2 = df2[y2]
 
-        poisson2 = TweedieRegressor(power=1.8, alpha=1, max_iter=10000).fit(X2, Y2, sample_weight=df2["Days"])
+        poisson2 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X2, Y2, sample_weight=df2["Days"]/7)
 
         rfe2 = RFECV(poisson2, min_features_to_select=1, cv=KFold(10)).fit(X2, Y2)
 
-        sfm2 = SelectFromModel(TweedieRegressor(power=1.8, alpha=1, max_iter=10000)).fit(X2, Y2, sample_weight=df2["Days"])
+        sfm2 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X2, Y2, sample_weight=df2["Days"]/7)
 
         pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=0)
 
-        methodname = [[y2, y2, y2],['REFCV', 'SelectFromModel', 'permutation_importance']]
+        methodname = [[y2, y2, y2],['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result2 = pd.DataFrame(zip(rfe2.ranking_, sfm2.get_support(), map(lambda x: round(x, 4), pi2.importances_mean)), index=name2, columns=methodname)
         result_ = pd.concat([result_, result2], axis=1)
     print(result, '\n', result_)
     # result.to_excel(output1)
-    result_.to_excel(output2)
+    # result_.to_excel(output2)
