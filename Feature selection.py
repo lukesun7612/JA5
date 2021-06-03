@@ -15,6 +15,7 @@ from sklearn.linear_model import TweedieRegressor, LassoCV, PoissonRegressor
 from sklearn.model_selection import KFold
 import statsmodels.api as sm
 from sklearn.inspection import permutation_importance
+import matplotlib.pyplot as plt
 
 def pretty_print_linear(coefs, names = None, sort = False):
     if names == None:
@@ -54,7 +55,8 @@ if __name__ == '__main__':
     X1 = scaler.fit_transform(X1)
     X2 = scaler.fit_transform(X2)
     result = pd.DataFrame()
-    for y1 in ['nearmiss_accel', 'nearmiss_brake']:
+    fig, ax = plt.subplots(2, 2)
+    for m, y1 in enumerate(['nearmiss_accel', 'nearmiss_brake']):
         Y1 = df1[y1]
 
         poisson1 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X1, Y1, sample_weight=df1["ndays"]/7)
@@ -63,13 +65,24 @@ if __name__ == '__main__':
 
         sfm1 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X1, Y1, sample_weight=df1["ndays"]/7)
 
-        pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10)
-
+        pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
+        sorted_idx1 = pi1.importances_mean.argsort()
+        ax[0][m].boxplot(pi1.importances[sorted_idx1].T, vert=False,
+                         labels=np.array(name1)[sorted_idx1],
+                         medianprops=dict(linewidth=0.5),
+                         boxprops=dict(linewidth=0.5),
+                         capprops=dict(linewidth=0.5),
+                         whiskerprops=dict(linewidth=0.5),
+                         flierprops=dict(markersize=0.5)
+                         )
+        ax[0][m].tick_params(labelsize=4)
+        ax[0][m].set_title(y1, fontsize=6)
         methodname = [[y1, y1, y1], ['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result1 = pd.DataFrame(zip(rfe1.ranking_, sfm1.get_support(), map(lambda x: round(x, 4), pi1.importances_mean)), index=name1, columns=methodname)
         result = pd.concat([result, result1], axis=1)
+
     result_ = pd.DataFrame()
-    for y2 in ['Harshacceleration', 'Harshdeceleration']:
+    for n, y2 in enumerate(['Harshacceleration', 'Harshdeceleration']):
         Y2 = df2[y2]
 
         poisson2 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X2, Y2, sample_weight=df2["Days"]/7)
@@ -78,11 +91,24 @@ if __name__ == '__main__':
 
         sfm2 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X2, Y2, sample_weight=df2["Days"]/7)
 
-        pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=0)
-
+        pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
+        sorted_idx2 = pi2.importances_mean.argsort()
+        ax[1][n].boxplot(pi2.importances[sorted_idx2].T, vert=False,
+                         labels=np.array(name2)[sorted_idx2],
+                         medianprops=dict(linewidth=0.5),
+                         boxprops=dict(linewidth=0.5),
+                         capprops=dict(linewidth=0.5),
+                         whiskerprops=dict(linewidth=0.5),
+                         flierprops=dict(markersize=0.5)
+                         )
+        ax[1][n].tick_params(labelsize=4)
+        ax[1][n].set_title(y2, fontsize=6)
         methodname = [[y2, y2, y2],['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result2 = pd.DataFrame(zip(rfe2.ranking_, sfm2.get_support(), map(lambda x: round(x, 4), pi2.importances_mean)), index=name2, columns=methodname)
         result_ = pd.concat([result_, result2], axis=1)
-    print(result, '\n', result_)
+    # print(result, '\n', result_)
     # result.to_excel(output1)
     # result_.to_excel(output2)
+    fig.suptitle("Permutation Importance", fontsize=10)
+    fig.tight_layout()
+    plt.show()

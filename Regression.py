@@ -83,3 +83,4 @@ if __name__ == '__main__':
         score_estimator(poisson3, X)
         print("model4")
         score_estimator(poisson_gbrt, X)
+        print(poisson_gbrt.score(X, Y))
