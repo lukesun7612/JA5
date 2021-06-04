@@ -9,9 +9,11 @@
 """
 import pandas as pd
 import numpy as np
+from sklearn.experimental import enable_hist_gradient_boosting  # noqa
+from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import RFECV, SelectFromModel
-from sklearn.linear_model import TweedieRegressor, LassoCV, PoissonRegressor
+from sklearn.linear_model import TweedieRegressor, PoissonRegressor
 from sklearn.model_selection import KFold
 import statsmodels.api as sm
 from sklearn.inspection import permutation_importance
@@ -47,7 +49,7 @@ if __name__ == '__main__':
     X1 = df1.drop(columns=['speed_max', 'ndays', 'nearmiss_accel', 'nearmiss_brake', 'nearmiss_accel_under_50kmh',
                            'nearmiss_brake_above_120kmh'])
     X2 = df2[['Distance', 'Fuel', 'Brakes', 'Speed', 'Range', 'RPM', 'Accelerator pedal position', 'Engine fuel rate',
-              'Trips', 'TripperDays', 'TripsinDay', 'DistanceinDay', 'TripsinNight', 'DistanceinNight',
+              'Trips', 'TripperDay', 'TripsinDay', 'DistanceinDay', 'TripsinNight', 'DistanceinNight',
               'TripsinWeekdays',
               'DistanceinWeekdays', 'TripsinWeekends', 'DistanceinWeekends', 'Trips<15m', '15m<Trips<30m',
               '30m<Trips<1h', '1h<Trips<2h', 'Trips>2h']]
@@ -60,14 +62,16 @@ if __name__ == '__main__':
         Y1 = df1[y1]
 
         poisson1 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X1, Y1, sample_weight=df1["ndays"]/7)
+        poisson_gbrt1 = HistGradientBoostingRegressor(loss='poisson').fit(X1, Y1, sample_weight=df1["ndays"] / 7)
 
         rfe1 = RFECV(poisson1, min_features_to_select=1, cv=KFold(10)).fit(X1, Y1)
 
         sfm1 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X1, Y1, sample_weight=df1["ndays"]/7)
 
         pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
-        sorted_idx1 = pi1.importances_mean.argsort()
-        ax[0][m].boxplot(pi1.importances[sorted_idx1].T, vert=False,
+        pi_gbrt1 =permutation_importance(poisson_gbrt1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
+        sorted_idx1 = pi_gbrt1.importances_mean.argsort()
+        ax[0][m].boxplot(pi_gbrt1.importances[sorted_idx1].T, vert=False,
                          labels=np.array(name1)[sorted_idx1],
                          medianprops=dict(linewidth=0.5),
                          boxprops=dict(linewidth=0.5),
@@ -86,14 +90,16 @@ if __name__ == '__main__':
         Y2 = df2[y2]
 
         poisson2 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X2, Y2, sample_weight=df2["Days"]/7)
+        poisson_gbrt2 = HistGradientBoostingRegressor(loss='poisson').fit(X2, Y2, sample_weight=df2["Days"]/7)
 
         rfe2 = RFECV(poisson2, min_features_to_select=1, cv=KFold(10)).fit(X2, Y2)
 
         sfm2 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X2, Y2, sample_weight=df2["Days"]/7)
 
         pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
-        sorted_idx2 = pi2.importances_mean.argsort()
-        ax[1][n].boxplot(pi2.importances[sorted_idx2].T, vert=False,
+        pi_gbrt2 = permutation_importance(poisson_gbrt2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
+        sorted_idx2 = pi_gbrt2.importances_mean.argsort()
+        ax[1][n].boxplot(pi_gbrt2.importances[sorted_idx2].T, vert=False,
                          labels=np.array(name2)[sorted_idx2],
                          medianprops=dict(linewidth=0.5),
                          boxprops=dict(linewidth=0.5),

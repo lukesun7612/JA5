@@ -18,13 +18,13 @@ import seaborn as sns
 if __name__ == '__main__':
     input1 = "./summary_drivers.xlsx"
     input2 = "./summary0.csv"
-    df1 = pd.read_excel(input1, index_col='TELEMATICSID')
+    df1 = pd.read_excel(input1, index_col='TELEMATICSID', engine='openpyxl')
     df2 = pd.read_csv(input2, index_col='ID')
     df1.columns = df1.columns.str.replace('_driver', '')
     df2 = df2.fillna(0)
     X1 = df1.drop(columns=['speed_max','nearmiss_accel','nearmiss_brake','nearmiss_accel_under_50kmh','nearmiss_brake_above_120kmh'])
     X2 = df2[[  'Distance', 'Fuel', 'Brakes', 'Speed', 'Range', 'RPM', 'Accelerator pedal position', 'Engine fuel rate',
-               'Days', 'Trips', 'TripperDays', 'TripsinDay', 'DistanceinDay', 'TripsinNight', 'DistanceinNight', 'TripsinWeekdays',
+               'Days', 'Trips', 'TripperDay', 'DistanceperTrip', 'TripsinDay', 'DistanceinDay', 'TripsinNight', 'DistanceinNight', 'TripsinWeekdays',
                'DistanceinWeekdays', 'TripsinWeekends', 'DistanceinWeekends', 'Trips<15m', '15m<Trips<30m',
                '30m<Trips<1h', '1h<Trips<2h', 'Trips>2h']]
     df_1 = pd.concat([df1[['nearmiss_accel', 'nearmiss_brake']], X1], 1)
