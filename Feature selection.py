@@ -18,6 +18,8 @@ from sklearn.model_selection import KFold
 import statsmodels.api as sm
 from sklearn.inspection import permutation_importance
 import matplotlib.pyplot as plt
+from sklearn.pipeline import make_pipeline, Pipeline
+from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_poisson_deviance
 
 def pretty_print_linear(coefs, names = None, sort = False):
     if names == None:
@@ -49,9 +51,8 @@ if __name__ == '__main__':
     X1 = df1.drop(columns=['speed_max', 'ndays', 'nearmiss_accel', 'nearmiss_brake', 'nearmiss_accel_under_50kmh',
                            'nearmiss_brake_above_120kmh'])
     X2 = df2[['Distance', 'Fuel', 'Brakes', 'Speed', 'Range', 'RPM', 'Accelerator pedal position', 'Engine fuel rate',
-              'Trips', 'TripperDay', 'TripsinDay', 'DistanceinDay', 'TripsinNight', 'DistanceinNight',
-              'TripsinWeekdays',
-              'DistanceinWeekdays', 'TripsinWeekends', 'DistanceinWeekends', 'Trips<15m', '15m<Trips<30m',
+              'Trips', 'TripperDay', 'TripsinDay', 'DistanceperTrip', 'DistanceinDay', 'TripsinNight', 'DistanceinNight',
+              'TripsinWeekdays', 'DistanceinWeekdays', 'TripsinWeekends', 'DistanceinWeekends', 'Trips<15m', '15m<Trips<30m',
               '30m<Trips<1h', '1h<Trips<2h', 'Trips>2h']]
     name1, name2 = X1.columns.tolist(), X2.columns.tolist()
     X1 = scaler.fit_transform(X1)
@@ -66,12 +67,12 @@ if __name__ == '__main__':
 
         rfe1 = RFECV(poisson1, min_features_to_select=1, cv=KFold(10)).fit(X1, Y1)
 
-        sfm1 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X1, Y1, sample_weight=df1["ndays"]/7)
+        sfm1 = SelectFromModel(poisson1).fit(X1, Y1, sample_weight=df1["ndays"]/7)
 
         pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
         pi_gbrt1 =permutation_importance(poisson_gbrt1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
-        sorted_idx1 = pi_gbrt1.importances_mean.argsort()
-        ax[0][m].boxplot(pi_gbrt1.importances[sorted_idx1].T, vert=False,
+        sorted_idx1 = pi1.importances_mean.argsort()
+        ax[0][m].boxplot(pi1.importances[sorted_idx1].T, vert=False,
                          labels=np.array(name1)[sorted_idx1],
                          medianprops=dict(linewidth=0.5),
                          boxprops=dict(linewidth=0.5),
@@ -84,7 +85,8 @@ if __name__ == '__main__':
         methodname = [[y1, y1, y1], ['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result1 = pd.DataFrame(zip(rfe1.ranking_, sfm1.get_support(), map(lambda x: round(x, 4), pi1.importances_mean)), index=name1, columns=methodname)
         result = pd.concat([result, result1], axis=1)
-
+        reg = Pipeline([("Feature selection", sfm1), ("regressor", HistGradientBoostingRegressor(loss='poisson'))]).fit(X1, Y1, regressor__sample_weight=df1["ndays"] / 7)
+        print(mean_poisson_deviance(Y1, reg.predict(X1), sample_weight=df1["ndays"] / 7))
     result_ = pd.DataFrame()
     for n, y2 in enumerate(['Harshacceleration', 'Harshdeceleration']):
         Y2 = df2[y2]
@@ -94,12 +96,12 @@ if __name__ == '__main__':
 
         rfe2 = RFECV(poisson2, min_features_to_select=1, cv=KFold(10)).fit(X2, Y2)
 
-        sfm2 = SelectFromModel(TweedieRegressor(power=1, alpha=1, max_iter=10000)).fit(X2, Y2, sample_weight=df2["Days"]/7)
+        sfm2 = SelectFromModel(poisson2).fit(X2, Y2, sample_weight=df2["Days"]/7)
 
         pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
         pi_gbrt2 = permutation_importance(poisson_gbrt2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
-        sorted_idx2 = pi_gbrt2.importances_mean.argsort()
-        ax[1][n].boxplot(pi_gbrt2.importances[sorted_idx2].T, vert=False,
+        sorted_idx2 = pi2.importances_mean.argsort()
+        ax[1][n].boxplot(pi2.importances[sorted_idx2].T, vert=False,
                          labels=np.array(name2)[sorted_idx2],
                          medianprops=dict(linewidth=0.5),
                          boxprops=dict(linewidth=0.5),
@@ -112,9 +114,10 @@ if __name__ == '__main__':
         methodname = [[y2, y2, y2],['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result2 = pd.DataFrame(zip(rfe2.ranking_, sfm2.get_support(), map(lambda x: round(x, 4), pi2.importances_mean)), index=name2, columns=methodname)
         result_ = pd.concat([result_, result2], axis=1)
-    # print(result, '\n', result_)
-    # result.to_excel(output1)
-    # result_.to_excel(output2)
-    fig.suptitle("Permutation Importance", fontsize=10)
+        reg = Pipeline([("Feature selection", sfm2), ("regressor", HistGradientBoostingRegressor(loss='poisson'))]).fit(X2, Y2, regressor__sample_weight=df2["Days"]/7)
+        print(mean_poisson_deviance(Y2, reg.predict(X2), sample_weight=df2["Days"] / 7))
+    fig.suptitle("Importance Permutation", fontsize=10)
     fig.tight_layout()
     plt.show()
+    # result.to_excel(output1)
+    # result_.to_excel(output2)

@@ -15,6 +15,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
 from sklearn.ensemble import HistGradientBoostingRegressor
 from sklearn.metrics import mean_squared_error, mean_absolute_error, mean_poisson_deviance
+from sklearn.pipeline import make_pipeline
 
 def score_estimator(estimator, X):
     """Score an estimator on the test set."""
