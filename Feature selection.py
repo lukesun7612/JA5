@@ -58,7 +58,7 @@ if __name__ == '__main__':
     X1 = scaler.fit_transform(X1)
     X2 = scaler.fit_transform(X2)
     result = pd.DataFrame()
-    fig, ax = plt.subplots(2, 2)
+    fig1, ax = plt.subplots(2, 2)
     for m, y1 in enumerate(['nearmiss_accel', 'nearmiss_brake']):
         Y1 = df1[y1]
 
@@ -72,6 +72,7 @@ if __name__ == '__main__':
         pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
         pi_gbrt1 =permutation_importance(poisson_gbrt1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
         sorted_idx1 = pi1.importances_mean.argsort()
+        sorted_idx2 = pi_gbrt1.importances_mean.argsort()
         ax[0][m].boxplot(pi1.importances[sorted_idx1].T, vert=False,
                          labels=np.array(name1)[sorted_idx1],
                          medianprops=dict(linewidth=0.5),
@@ -81,13 +82,24 @@ if __name__ == '__main__':
                          flierprops=dict(markersize=0.5)
                          )
         ax[0][m].tick_params(labelsize=4)
-        ax[0][m].set_title(y1, fontsize=6)
+        ax[0][m].set_title('Poisson'+'\n'+y1, fontsize=6)
+        ax[1][m].boxplot(pi_gbrt1.importances[sorted_idx2].T, vert=False,
+                         labels=np.array(name1)[sorted_idx2],
+                         medianprops=dict(linewidth=0.5),
+                         boxprops=dict(linewidth=0.5),
+                         capprops=dict(linewidth=0.5),
+                         whiskerprops=dict(linewidth=0.5),
+                         flierprops=dict(markersize=0.5)
+                         )
+        ax[1][m].tick_params(labelsize=4)
+        ax[1][m].set_title('GBRT'+'\n'+y1, fontsize=6)
         methodname = [[y1, y1, y1], ['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result1 = pd.DataFrame(zip(rfe1.ranking_, sfm1.get_support(), map(lambda x: round(x, 4), pi1.importances_mean)), index=name1, columns=methodname)
         result = pd.concat([result, result1], axis=1)
         reg = Pipeline([("Feature selection", sfm1), ("regressor", HistGradientBoostingRegressor(loss='poisson'))]).fit(X1, Y1, regressor__sample_weight=df1["ndays"] / 7)
         print(mean_poisson_deviance(Y1, reg.predict(X1), sample_weight=df1["ndays"] / 7))
     result_ = pd.DataFrame()
+    fig2, ax = plt.subplots(2, 2)
     for n, y2 in enumerate(['Harshacceleration', 'Harshdeceleration']):
         Y2 = df2[y2]
 
@@ -100,8 +112,19 @@ if __name__ == '__main__':
 
         pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
         pi_gbrt2 = permutation_importance(poisson_gbrt2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
-        sorted_idx2 = pi2.importances_mean.argsort()
-        ax[1][n].boxplot(pi2.importances[sorted_idx2].T, vert=False,
+        sorted_idx1 = pi2.importances_mean.argsort()
+        sorted_idx2 = pi_gbrt2.importances_mean.argsort()
+        ax[0][n].boxplot(pi2.importances[sorted_idx1].T, vert=False,
+                         labels=np.array(name2)[sorted_idx1],
+                         medianprops=dict(linewidth=0.5),
+                         boxprops=dict(linewidth=0.5),
+                         capprops=dict(linewidth=0.5),
+                         whiskerprops=dict(linewidth=0.5),
+                         flierprops=dict(markersize=0.5)
+                         )
+        ax[0][n].tick_params(labelsize=4)
+        ax[0][n].set_title('Poisson'+'\n'+y2, fontsize=6)
+        ax[1][n].boxplot(pi_gbrt2.importances[sorted_idx2].T, vert=False,
                          labels=np.array(name2)[sorted_idx2],
                          medianprops=dict(linewidth=0.5),
                          boxprops=dict(linewidth=0.5),
@@ -110,14 +133,16 @@ if __name__ == '__main__':
                          flierprops=dict(markersize=0.5)
                          )
         ax[1][n].tick_params(labelsize=4)
-        ax[1][n].set_title(y2, fontsize=6)
+        ax[1][n].set_title('GBRT'+'\n'+y2, fontsize=6)
         methodname = [[y2, y2, y2],['REFCV', 'SelectFromModel', 'PermutationImportance']]
         result2 = pd.DataFrame(zip(rfe2.ranking_, sfm2.get_support(), map(lambda x: round(x, 4), pi2.importances_mean)), index=name2, columns=methodname)
         result_ = pd.concat([result_, result2], axis=1)
         reg = Pipeline([("Feature selection", sfm2), ("regressor", HistGradientBoostingRegressor(loss='poisson'))]).fit(X2, Y2, regressor__sample_weight=df2["Days"]/7)
         print(mean_poisson_deviance(Y2, reg.predict(X2), sample_weight=df2["Days"] / 7))
-    fig.suptitle("Importance Permutation", fontsize=10)
-    fig.tight_layout()
+    fig1.suptitle("Spain Data", fontsize=8)
+    fig2.suptitle("China Data", fontsize=8)
+    fig1.tight_layout()
+    fig2.tight_layout()
     plt.show()
     # result.to_excel(output1)
     # result_.to_excel(output2)

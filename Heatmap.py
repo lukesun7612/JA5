@@ -50,7 +50,7 @@ if __name__ == '__main__':
     ax1.set_yticklabels(ax1.get_yticklabels(), rotation=0, )
     ax1.xaxis.set_ticks_position('bottom')
     ax1.yaxis.set_ticks_position('left')
-    ax1.set_xlabel('China', fontsize=8, rotation=0)
+    ax1.set_xlabel('China Data', fontsize=8, rotation=0)
     ax1.xaxis.set_label_position('top')
     ax1.tick_params(labelsize=4.3)
     f2, ax2 = plt.subplots(figsize=(12, 9), dpi=100)
@@ -72,7 +72,7 @@ if __name__ == '__main__':
     ax2.xaxis.set_ticks_position('bottom')
     ax2.yaxis.set_ticks_position('left')
     # ax2.invert_xaxis()
-    ax2.set_xlabel('Spain', fontsize = 8, rotation=0)
+    ax2.set_xlabel('Spain Data', fontsize = 8, rotation=0)
     ax2.xaxis.set_label_position('top')
     ax2.tick_params(labelsize = 4.3)
     plt.tight_layout()
@@ -84,13 +84,15 @@ if __name__ == '__main__':
     #                      center=0,
     #                      cmap='RdBu_r',
     #                      # cbar=False,
-    #                      xticklabels=4,
+    #                      xticklabels=1,
     #                      yticklabels=1,
     #                      annot=True,  # 图中数字文本显示
     #                      fmt=".2f",  # 格式化输出图中数字，即保留小数位数等
     #                      annot_kws={'size': 4, 'weight': 'normal', 'color': '#253D24'},  # 数字属性设置，例如字号、磅值、颜色
     #                      # mask=np.triu(np.ones_like(dfcorr2, dtype=np.bool)),  # 显示对脚线下面部分图
-    #                      square=True, linewidths=.5,  # 每个方格外框显示，外框宽度设置
-    #                      cbar_kws={"shrink": .5})
-
+    #                      square=True,
+    #                      linewidths=.5,  # 每个方格外框显示，外框宽度设置
+    #                      cbar_pos=(.25, .35, .01, .5),
+    #                      dendrogram_ratio=(.4, .1))
+    # ax3.ax_row_dendrogram.remove()
     plt.show()
