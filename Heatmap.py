@@ -16,12 +16,12 @@ import seaborn as sns
 
 
 if __name__ == '__main__':
-    input1 = "./summary_drivers.xlsx"
-    input2 = "./summary0.csv"
+    input1 = "./summary_Spain.xlsx"
+    input2 = "./summary_China.csv"
     df1 = pd.read_excel(input1, index_col='TELEMATICSID', engine='openpyxl')
     df2 = pd.read_csv(input2, index_col='ID')
     df1.columns = df1.columns.str.replace('_driver', '')
-    df2 = df2.fillna(0)
+    df2['Fuel'] = df2['Fuel'].fillna(value=df2['Fuel'].mean())
     X1 = df1.drop(columns=['speed_max','nearmiss_accel','nearmiss_brake','nearmiss_accel_under_50kmh','nearmiss_brake_above_120kmh'])
     X2 = df2[[  'Distance', 'Fuel', 'Brakes', 'Speed', 'Range', 'RPM', 'Accelerator pedal position', 'Engine fuel rate',
                'Days', 'Trips', 'TripperDay', 'DistanceperTrip', 'TripsinDay', 'DistanceinDay', 'TripsinNight', 'DistanceinNight', 'TripsinWeekdays',

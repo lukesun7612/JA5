@@ -10,7 +10,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.experimental import enable_hist_gradient_boosting  # noqa
-from sklearn.ensemble import HistGradientBoostingRegressor
+from sklearn.ensemble import HistGradientBoostingRegressor, GradientBoostingRegressor
 from sklearn.preprocessing import StandardScaler
 from sklearn.feature_selection import RFECV, SelectFromModel
 from sklearn.linear_model import TweedieRegressor, PoissonRegressor
@@ -37,8 +37,8 @@ def clean_dataset(df):
 
 if __name__ == '__main__':
     pd.set_option('display.max_columns', None)
-    input1 = "./summary_drivers.xlsx"
-    input2 = "./summary0.csv"
+    input1 = "./summary_Spain.xlsx"
+    input2 = "./summary_China.csv"
     output1 = "./Table/Feature_selection1.xlsx"
     output2 = "./Table/Feature_selection2.xlsx"
     df1 = pd.read_excel(input1, index_col='TELEMATICSID', engine='openpyxl')
@@ -64,13 +64,14 @@ if __name__ == '__main__':
 
         poisson1 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X1, Y1, sample_weight=df1["ndays"]/7)
         poisson_gbrt1 = HistGradientBoostingRegressor(loss='poisson').fit(X1, Y1, sample_weight=df1["ndays"] / 7)
+        poisson3 = GradientBoostingRegressor(loss='huber', random_state=0, n_iter_no_change=5).fit(X1, Y1, sample_weight=df1["ndays"] / 7)
 
         rfe1 = RFECV(poisson1, min_features_to_select=1, cv=KFold(10)).fit(X1, Y1)
 
         sfm1 = SelectFromModel(poisson1).fit(X1, Y1, sample_weight=df1["ndays"]/7)
 
-        pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
-        pi_gbrt1 =permutation_importance(poisson_gbrt1, X1, Y1, n_repeats=10, random_state=42, n_jobs=2)
+        pi1 = permutation_importance(poisson1, X1, Y1, n_repeats=10, random_state=0, n_jobs=1)
+        pi_gbrt1 =permutation_importance(poisson_gbrt1, X1, Y1, n_repeats=10, random_state=0, n_jobs=1)
         sorted_idx1 = pi1.importances_mean.argsort()
         sorted_idx2 = pi_gbrt1.importances_mean.argsort()
         ax[0][m].boxplot(pi1.importances[sorted_idx1].T, vert=False,
@@ -105,13 +106,13 @@ if __name__ == '__main__':
 
         poisson2 = TweedieRegressor(power=1, alpha=1, max_iter=10000).fit(X2, Y2, sample_weight=df2["Days"]/7)
         poisson_gbrt2 = HistGradientBoostingRegressor(loss='poisson').fit(X2, Y2, sample_weight=df2["Days"]/7)
-
+        poisson3 = GradientBoostingRegressor(loss='huber', random_state=0, n_iter_no_change=5).fit(X2, Y2, sample_weight=df2["Days"] / 7)
         rfe2 = RFECV(poisson2, min_features_to_select=1, cv=KFold(10)).fit(X2, Y2)
 
         sfm2 = SelectFromModel(poisson2).fit(X2, Y2, sample_weight=df2["Days"]/7)
 
-        pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
-        pi_gbrt2 = permutation_importance(poisson_gbrt2, X2, Y2, n_repeats=10, random_state=42, n_jobs=2)
+        pi2 = permutation_importance(poisson2, X2, Y2, n_repeats=10, random_state=0, n_jobs=1)
+        pi_gbrt2 = permutation_importance(poisson_gbrt2, X2, Y2, n_repeats=10, random_state=0, n_jobs=1)
         sorted_idx1 = pi2.importances_mean.argsort()
         sorted_idx2 = pi_gbrt2.importances_mean.argsort()
         ax[0][n].boxplot(pi2.importances[sorted_idx1].T, vert=False,
