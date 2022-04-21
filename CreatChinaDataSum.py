@@ -171,14 +171,14 @@ def split_journey(df, rotate=100, dura=5):
 
 if __name__ == '__main__':
     input = "D:/result/dataset0"
-    output = "D:/博士/论文/JA5/summary0.csv"
+    output = "E:/博士/论文/JA5/summary0.csv"
     result = pd.DataFrame()
     count = 0
     columns = ['ID', 'Overspeed', 'Highspeedbrake', 'Harshacceleration', 'Harshdeceleration',
                'Distance', 'Fuel', 'Brakes', 'Speed', 'Range', 'RPM', 'Accelerator pedal position', 'Engine fuel rate',
                'Days', 'Trips', 'TripperDays', 'TripsinDay', 'DistanceinDay', 'TripsinNight', 'DistanceinNight', 'TripsinWeekdays',
                'DistanceinWeekdays', 'TripsinWeekends', 'DistanceinWeekends', 'Trips<15m', '15m<Trips<30m',
-               '30m<Trips<1h', '1h<Trips<2h', 'Trips>2h']
+               '30m<Trips<1h', '1h<Trips<2h', 'Trips>2h', 'DistanceperDays']
     for i, file in enumerate(os.listdir(input)):
         print(i, file)
         filepath = os.path.join(input, file)
@@ -206,7 +206,8 @@ if __name__ == '__main__':
         record[13], record[14], record[15], record[16], record[17], record[18], record[19], record[20], record[21], \
         record[22], record[23], record[24], record[25], record[26], record[27], record[28] = split_journey(df)
         record[5] = record[17] + record[19]
-        res = pd.DataFrame(np.array(record.tolist()).reshape(1, 29), columns=columns)
+        record[29] = record[5]/record[13]
+        res = pd.DataFrame(np.array(record.tolist()).reshape(1, 30), columns=columns)
         if record[5] < 2:
             pass
         else:
